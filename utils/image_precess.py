@@ -165,3 +165,4 @@ if __name__ == '__main__':
 
     img = img_2_array(img)
     array_to_img(img).show()
+
