@@ -3,8 +3,8 @@ import tensorflow as tf
 import numpy as np
 import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as nets
-
-
+import config
+import utils.extract_batch
 
 
 class Siamese_cnn():
