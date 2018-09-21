@@ -1,6 +1,9 @@
 import warnings
 import numpy as np
 import PIL
+import cv2
+
+"""reference https://github.com/keras-team/keras"""
 try:
     from PIL import Image as pil_image
 except ImportError:
@@ -81,8 +84,8 @@ def array_to_img(x, data_format='channels_last', scale=True):
     # Original Numpy array x has format (height, width, channel)
     # or (channel, height, width)
     # but target PIL image has format (width, height, channel)
-    if data_format == 'channels_first':
-        x = x.transpose(1, 2, 0)
+    # if data_format == 'channels_first':
+    #     x = x.transpose(1, 2, 0)
     if scale:
         x = x + max(-np.min(x), 0)
         x_max = np.max(x)
@@ -157,12 +160,59 @@ def load_img(path, grayscale=False, color_mode='rgb', target_size=None,
     return img
 
 
-if __name__ == '__main__':
-    file_directory = '/home/ubuntu/media/File/1Various/Person_reid_dataset/Market-1501-v15.09.15/'
-    img_dir = 'query/0014_c5s1_001026_00.jpg'
+def preprocess_input(x, data_format='channels_last', mode='tf'):
+    """Preprocesses a tensor or Numpy array encoding a batch of images.
 
-    img = load_img(file_directory+img_dir, target_size=[224, 224], interpolation='bilinear')
+        # Arguments
+            x: Input Numpy or symbolic tensor, 3D or 4D.
+                The preprocessed data is written over the input data
+                if the data types are compatible. To avoid this
+                behaviour, `numpy.copy(x)` can be used.
+            data_format: Data format of the image tensor/array.
+            mode: One of "caffe", "tf" or "torch".
+                - caffe: will convert the images from RGB to BGR,
+                    then will zero-center each color channel with
+                    respect to the ImageNet dataset,
+                    without scaling.
+                - tf: will scale pixels between -1 and 1,
+                    sample-wise.
+                - torch: will scale pixels between 0 and 1 and then
+                    will normalize each channel with respect to the
+                    ImageNet dataset.
 
-    img = img_2_array(img)
-    array_to_img(img).show()
+        # Returns
+            Preprocessed tensor or Numpy array.
+
+        # Raises
+            ValueError: In case of unknown `data_format` argument.
+        """
+    if isinstance(x, np.ndarray):
+        if not issubclass(x.dtype.type, np.floating):
+            x = x.astype('float32', copy=False)
+
+        if mode == 'tf':
+            x /= 127.5
+            x -= 1
+            return x 
+    else:
+        raise ValueError('the format of input is not np.ndarray')
+
+
+# if __name__ == '__main__':
+#     file_directory = '/home/ubuntu/media/File/1Various/Person_reid_dataset/Market-1501-v15.09.15/'
+#     img_dir = 'query/0014_c5s1_001026_00.jpg'
+#
+#     img = load_img(file_directory+img_dir, target_size=[224, 224], interpolation='bilinear')
+#
+#     img = img_2_array(img)
+#     x = preprocess_input(img)
+#     print(x)
+#     # shape (224, 224, 3)
+
+    # too slow !!!
+    # image = cv2.imread(file_directory+img_dir)
+    # image = cv2.resize(image, (224, 224))
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # print(image.shape)
+
 
