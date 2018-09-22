@@ -1,15 +1,14 @@
 import json
-import numpy as np
 from random import shuffle
 from utils.image_precess import *
-import config
+from utils import config
 
 """
 for DukeMTMC example：
 0001_c2_f0046302.jpg--> {{'id':0001},{location:c2},{time:0046302},}
 """
 
-name_dir = '../data/DukeMTMC/'
+name_dir = config.DukeMTMC_name_dir
 DukeMTMC_directory = config.DukeMTMC_img_dir
 diff_set = {'train': 'bounding_box_train.txt', 'test': 'bounding_box_test.txt', 'query': 'query.txt'}
 
@@ -119,7 +118,8 @@ def get_pair(_ids, start, end):
         shuffle_labels.append(labels[index])
     # labels should convert to row data like (2,1)
     # in the networks labels should convert it to float32.
-    shuffle_labels = np.asarray(shuffle_labels)[:, np.newaxis]
+    print(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis].shape)
+    shuffle_labels = list(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis])
     return shuffle_left_imgs, shuffle_right_imgs, shuffle_labels
 
 
@@ -128,9 +128,9 @@ def precess_to_array(left_imgs_name, right_imgs_name, target_size, name_select):
     left = list()
     right = list()
     for l in left_imgs_name:
-        left.append(img_2_array(load_img(data_dir+'/'+l, target_size)))
+        left.append(preprocess_input(img_2_array(load_img(data_dir+'/'+l, target_size=target_size))))
     for r in right_imgs_name:
-        right.append(img_2_array(load_img(data_dir+'/'+r, target_size)))
+        right.append(preprocess_input(img_2_array(load_img(data_dir+'/'+r, target_size=target_size))))
     return left, right
 
 
@@ -152,10 +152,11 @@ def next_batch(batch_size, target_size, is_train, start):
         # positive pair add in sequence of the set!!(so just take care the odd),
         # while negative just randomly select pairs
         # take care start > end !!!
+        # todo the format of imgs_array is wrong ! while labels not sure!!
         left_imgs_name, right_imgs_name, labels = get_pair(_ids, start, end)
         left_imgs_array, right_imgs_array = precess_to_array(left_imgs_name, right_imgs_name, target_size, name_select)
         return left_imgs_array, right_imgs_array, labels, end
 
 
-if __name__ == '__main__':
-    next_batch(2, [224, 224], True, 702)
+# if __name__ == '__main__':
+#     next_batch(2, [224, 224], True, 702)

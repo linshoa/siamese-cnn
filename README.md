@@ -1,2 +1,2 @@
-# siamese-cnn
-using tf 
+# Siamese-cnn
+using TensorFlow!

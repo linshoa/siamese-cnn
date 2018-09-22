@@ -1,6 +1,5 @@
 import json
 from utils.extract_batch import get_id
-import config
 
 person_id = get_id(name_select='train')
 person_id = sorted(person_id)

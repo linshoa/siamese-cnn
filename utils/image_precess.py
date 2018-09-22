@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
-import PIL
-import cv2
+# import PIL
+# import cv2
 
 """reference https://github.com/keras-team/keras"""
 try:
@@ -48,7 +48,7 @@ def img_2_array(img, data_format='channels_last'):
     # but original PIL image has format (width, height, channel)
     # numpy.asarray convert the input to array
     array = np.asarray(img, dtype="float32")
-    print(array.shape)
+    # print(array.shape)
     if len(array.shape) >= 2:
         if len(array.shape) == 2:
             array = array.reshape(array[0], array[1], 1)
@@ -193,6 +193,7 @@ def preprocess_input(x, data_format='channels_last', mode='tf'):
         if mode == 'tf':
             x /= 127.5
             x -= 1
+            print(x.shape)
             return x 
     else:
         raise ValueError('the format of input is not np.ndarray')
