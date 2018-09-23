@@ -117,8 +117,8 @@ def get_pair(_ids, start, end):
         shuffle_right_imgs.append(right_imgs[index])
         shuffle_labels.append(labels[index])
     # labels should convert to row data like (2,1)
-    # in the networks labels should convert it to float32.
-    print(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis].shape)
+    # # in the networks labels should convert it to float32.
+    # print(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis].shape)
     shuffle_labels = list(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis])
     return shuffle_left_imgs, shuffle_right_imgs, shuffle_labels
 

@@ -193,7 +193,6 @@ def preprocess_input(x, data_format='channels_last', mode='tf'):
         if mode == 'tf':
             x /= 127.5
             x -= 1
-            print(x.shape)
             return x 
     else:
         raise ValueError('the format of input is not np.ndarray')
