@@ -13,12 +13,35 @@ def contrastive_loss(_left, _right, _label_input):
     with tf.name_scope('output'):
         # the transpose here really memory consume!!!
         # inner_product = tf.matmul(_left, tf.matrix_transpose(_right))
-        #todo drpout
-        _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
-        _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
-        diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
-        fc_out = slim.fully_connected(slim.flatten(diff_feature), 2, activation_fn=None)
+
+        # here is for random cos
+        # first divide the feature into 3 group
+        # them random walk, and accept the max feature.
+        left_all = []
+        right_all = []
+        for i in range(4):
+            left_all.append(_left[:, _left.shape[1]//4*i:_left.shape[1]//4*(i+1), :, :])
+            right_all.append(_right[:, _right.shape[1]//4*i:_right.shape[1]//4*(i+1), :, :])
+
+        for i in range(4):
+            diff_feature_random_walk = list()
+            for j in range(4):
+                diff_feature_random_walk.append(tf.matmul(tf.nn.l2_normalize(left_all[i]), tf.nn.l2_normalize(right_all[j]), transpose_a=False, transpose_b=True))
+            if not i:
+                feature_out = tf.reduce_max(diff_feature_random_walk, axis=0)
+            else:
+                feature_out = tf.concat([feature_out, tf.reduce_max(diff_feature_random_walk, axis=0)], axis=0)
+        fc_out = slim.fully_connected(slim.flatten(feature_out), 2, activation_fn=None)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
+
+
+
+        #todo drpout
+        # _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
+        # _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
+        # diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
+        # fc_out = slim.fully_connected(slim.flatten(diff_feature), 2, activation_fn=None)
+        # _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
         # 输出 [1,0] or [0, 1]
 
     with tf.name_scope('loss'):
@@ -66,7 +89,7 @@ if __name__ == '__main__':
         for var in tf.trainable_variables():
             tf.summary.histogram(var.op.name, var)
         merged = tf.summary.merge_all()
-        writer = tf.summary.FileWriter('./model/result/', sess.graph)
+        writer = tf.summary.FileWriter('./model/only_visual_result/', sess.graph)
 
         # training epoch
         next_start = 0
@@ -76,7 +99,7 @@ if __name__ == '__main__':
 
             writer.add_summary(summary_str, i)
             if i % config.SAVE_ITER == 0 and i != 0:
-                saver.save(sess, './model/result/model_%d.ckpt' % i)
+                saver.save(sess, './model/only_visual_result/model_random_walk_1_3_%d.ckpt' % i)
                 # if config.LEARNING_RATE >= 1e-4:
                 # lr /= 10
                 if i > 120 and lr > 1e-4:
