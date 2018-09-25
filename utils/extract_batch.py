@@ -57,7 +57,7 @@ def get_id_spatio_temporal(line):
     :return: [person_id, location, _time]
     """
     data = line[:-4].split('_')
-    person_id, location, _time = data[0], data[1], data[2][1:]
+    person_id, location, _time = data[0], data[1][1: ], data[2][1:]
     return [person_id, location, _time]
 
 
@@ -73,14 +73,16 @@ def get_exact_id_pair(person_id, positive):
     candidate = id_dict[person_id]
     if positive:
         left_name, right_name = list(np.random.choice(candidate, 2))
-        label = 1
+        # positive
+        label = [1, 0]
     else:
         left_name = np.random.choice(candidate, 1)[0]
         set_id_copy.remove(person_id)
         person_id_another = np.random.choice(set_id_copy, 1)[0]
         candidate_another = id_dict[person_id_another]
         right_name = np.random.choice(candidate_another, 1)[0]
-        label = 0
+        # negative
+        label = [0, 1]
     return left_name, right_name, label
 
 
@@ -95,7 +97,7 @@ def get_pair(_ids, start, end):
 
     # split into positive and negative
     for i in person_id:
-        if person_id.index(i) < len(person_id)//2:
+        if person_id.index(i) < len(person_id)//4:
             # positive
             left, right, label = get_exact_id_pair(i, positive=True)
         else:
@@ -106,12 +108,14 @@ def get_pair(_ids, start, end):
         labels.append(label)
 
     # here comes the shuffle
-    # since
     shuffle_index = np.arange(len(labels))
     shuffle(shuffle_index)
     shuffle_left_imgs = []
     shuffle_right_imgs = []
     shuffle_labels = []
+    left_info = []
+    right_info = []
+    
     for index in shuffle_index:
         shuffle_left_imgs.append(left_imgs[index])
         shuffle_right_imgs.append(right_imgs[index])
@@ -120,7 +124,11 @@ def get_pair(_ids, start, end):
     # # in the networks labels should convert it to float32.
     # print(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis].shape)
     shuffle_labels = list(np.asarray(shuffle_labels, dtype='float32')[:, np.newaxis])
-    return shuffle_left_imgs, shuffle_right_imgs, shuffle_labels
+    for left_name in shuffle_left_imgs:
+        left_info.append(get_id_spatio_temporal(left_name))
+    for right_name in shuffle_right_imgs:
+        right_info.append(get_id_spatio_temporal(right_name))
+    return shuffle_left_imgs, shuffle_right_imgs, shuffle_labels, left_info, right_info
 
 
 def precess_to_array(left_imgs_name, right_imgs_name, target_size, name_select):
@@ -153,9 +161,11 @@ def next_batch(batch_size, target_size, is_train, start):
         # while negative just randomly select pairs
         # take care start > end !!!
         # todo the format of imgs_array is wrong ! while labels not sure!!
-        left_imgs_name, right_imgs_name, labels = get_pair(_ids, start, end)
+        left_imgs_name, right_imgs_name, labels, info_left, info_right = get_pair(_ids, start, end)
+        info_left_location = info_left[:][1]
+        info_left_time = info_left[:][2]
         left_imgs_array, right_imgs_array = precess_to_array(left_imgs_name, right_imgs_name, target_size, name_select)
-        return left_imgs_array, right_imgs_array, labels, end
+        return left_imgs_array, right_imgs_array, labels, info_left, info_right, end
 
 
 # if __name__ == '__main__':
