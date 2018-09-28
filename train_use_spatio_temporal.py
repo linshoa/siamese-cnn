@@ -68,7 +68,7 @@ if __name__ == '__main__':
         # shape is (batch, x, x, 2048)
 
     with tf.Session(config=cuda.config) as sess:
-        lr = 1e-3
+        lr = 1e-4
         # restore the graph, so we should not define any other graph before that.
         sess.run(tf.global_variables_initializer())
         restore = tf.train.Saver()
@@ -105,9 +105,9 @@ if __name__ == '__main__':
                 saver.save(sess, './model/visual_result/model_p_n_1_3_%d.ckpt' % i)
                 # if config.LEARNING_RATE >= 1e-4:
                 # lr /= 10
-                if i > 220 and lr > 1e-4:
+                if i > 220 and lr > 1e-5:
                     lr /= 2
-                elif i > 3000 and lr > 1e-5:
+                elif i > 3000 and lr > 1e-6:
                     lr /= 2
             print(i, sum_loss)
             # print(_left_out.shape)
