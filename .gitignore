@@ -5,3 +5,5 @@
 /model/only_visual_result/
 /model/result/
 /model/visual_result/
+!/model/__init__.py
+!/model/resnet_v1_50.ckpt
