@@ -27,7 +27,8 @@ def contrastive_loss(_left, _right, _label_input, _info_left_location, _info_rig
         _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
         _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
         diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
-        fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.7)
+        # fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.7)
+        fc_out = slim.fully_connected(slim.flatten(diff_feature), 16)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 16])
 
         feature_spatio_temporal, _all = spatio_temporal(_info_left_location, _info_right_location, _info_left_time, _info_right_time)
