@@ -1,3 +1,7 @@
 .idea/
-test/
+/test/
 *.pyc
+/utils/config.py
+/model/only_visual_result/
+/model/result/
+/model/visual_result/
