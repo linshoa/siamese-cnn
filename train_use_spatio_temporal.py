@@ -88,7 +88,7 @@ if __name__ == '__main__':
         for var in tf.trainable_variables():
             tf.summary.histogram(var.op.name, var)
         merged = tf.summary.merge_all()
-        writer = tf.summary.FileWriter('./model/visual_result/', sess.graph)
+        writer = tf.summary.FileWriter('./model/spatio_temparal_visual_result/', sess.graph)
 
         # training epoch
         next_start = 0
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
             writer.add_summary(summary_str, i)
             if i % config.SAVE_ITER == 0 and i != 0:
-                saver.save(sess, './model/visual_result/model_p_n_1_3_%d.ckpt' % i)
+                saver.save(sess, './model/spatio_temparal_visual_result/model_p_n_1_3_%d.ckpt' % i)
                 # if config.LEARNING_RATE >= 1e-4:
                 # lr /= 10
                 if i > 220 and lr > 1e-5:
