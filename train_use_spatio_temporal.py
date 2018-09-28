@@ -27,7 +27,7 @@ def contrastive_loss(_left, _right, _label_input, _info_left_location, _info_rig
         _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
         _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
         diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
-        fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.5)
+        fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.7)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 16])
 
         feature_spatio_temporal, _all = spatio_temporal(_info_left_location, _info_right_location, _info_left_time, _info_right_time)
@@ -40,7 +40,7 @@ def contrastive_loss(_left, _right, _label_input, _info_left_location, _info_rig
 
     with tf.name_scope('loss'):
         _loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=_label_input, logits=final_feature_out)
-        __loss_out = tf.reduce_sum(_loss)
+        __loss_out = tf.reduce_mean(_loss)
     return __loss_out, _loss, _all
 
 
@@ -66,8 +66,8 @@ if __name__ == '__main__':
         # while if False
         # shape is (batch, x, x, 2048)
 
-    with tf.Session() as sess:
-        lr = 1e-3
+    with tf.Session(config=cuda.config) as sess:
+        lr = 1e-2
         # restore the graph, so we should not define any other graph before that.
         sess.run(tf.global_variables_initializer())
         restore = tf.train.Saver()
@@ -104,7 +104,9 @@ if __name__ == '__main__':
                 saver.save(sess, './model/visual_result/model_p_n_1_3_%d.ckpt' % i)
                 # if config.LEARNING_RATE >= 1e-4:
                 # lr /= 10
-                if i > 200 and lr > 1e-4:
+                if i > 220 and lr > 1e-4:
+                    lr /= 2
+                elif i > 3000 and lr > 1e-5:
                     lr /= 2
             print(i, sum_loss)
             # print(_left_out.shape)

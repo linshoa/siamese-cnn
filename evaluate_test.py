@@ -7,7 +7,7 @@ from utils.image_precess import *
 import numpy as np
 import time
 
-model_siamese_cnn = './model/result/model_4950.ckpt'
+model_siamese_cnn = './model/only_visual_result/model_random_walk_1_3_9900.ckpt'
 query_img_dir = config.DukeMTMC_img_dir+'query/'
 test_img_dir = config.DukeMTMC_img_dir+'bounding_box_test/'
 query_name_dir = config.DukeMTMC_name_dir+'query.txt'
@@ -24,15 +24,28 @@ with tf.Session(config=cuda.config) as sess:
         right_feature, __ = nets.resnet_v1.resnet_v1_50(right, is_training=True, global_pool=False, reuse=True)
 
     with tf.name_scope('output'):
-        # the transpose here really memory consume!!!
-        # inner_product = tf.matmul(_left, tf.matrix_transpose(_right))
-        #todo drpout
-        diff_feature = tf.square(left_feature - right_feature)
-        fc_out = slim.fully_connected(slim.flatten(diff_feature), 2, activation_fn=None)
+        left_all = []
+        right_all = []
+        for i in range(4):
+            left_all.append(left_feature[:, left_feature.shape[1] // 4 * i:left_feature.shape[1] // 4 * (i + 1), :, :])
+            right_all.append(right_feature[:, right_feature.shape[1] // 4 * i:right_feature.shape[1] // 4 * (i + 1), :, :])
+
+        for i in range(4):
+            diff_feature_random_walk = list()
+            for j in range(4):
+                diff_feature_random_walk.append(
+                    tf.matmul(tf.nn.l2_normalize(left_all[i]), tf.nn.l2_normalize(right_all[j]), transpose_a=False,
+                              transpose_b=True))
+
+            if not i:
+                feature_out = tf.reduce_max(diff_feature_random_walk, axis=0)
+            else:
+                feature_out = tf.concat([feature_out, tf.reduce_max(diff_feature_random_walk, axis=0)], axis=1)
+        del left_all, right_all
+        del diff_feature_random_walk
+        fc_out = slim.fully_connected(slim.flatten(feature_out), 2, activation_fn=None)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
         result = slim.softmax(_inner_product)
-        # _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1])
-        # similarity = slim.nn.sigmoid(inner_product)
 
     restore = tf.train.Saver()
     restore.restore(sess, model_siamese_cnn)
@@ -73,8 +86,10 @@ with tf.Session(config=cuda.config) as sess:
                         for batch_i in _result[0]:
                             # print(batch_i[0])
                             if np.argmax(batch_i[0]) == 0:
+                            # if batch_i[0][0] >= 0.6:
                                 judge_correct += 1
                                 if right_name[i].split('_')[0] == name_id:
+                                    print(right_name[i].split('_')[0])
                                     find_real_correct += 1
                                 # print(right_name[i])
                                 # print(True)
@@ -102,16 +117,20 @@ with tf.Session(config=cuda.config) as sess:
                 for batch_i in _result[0]:
                     # print(batch_i[0])
                     if np.argmax(batch_i[0]) == 0:
+                    # if batch_i[0][0] >= 0.6:
                         if right_name[i] != name:
                             judge_correct += 1
                             if right_name[i].split('_')[0] == name_id:
+                                print(right_name[i].split('_')[0])
                                 find_real_correct += 1
                             # print(right_name[i])
                             # print(True)
                     i += 1
-
-            ap = find_real_correct / judge_correct
-            print(ap)
+            if judge_correct:
+                ap = find_real_correct / judge_correct
+                print(ap)
+            else:
+                print('ap not find')
             recall = find_real_correct / all_real_correct
             print(recall)
             mAp.append(ap)

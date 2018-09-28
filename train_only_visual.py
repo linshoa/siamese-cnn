@@ -27,10 +27,13 @@ def contrastive_loss(_left, _right, _label_input):
             diff_feature_random_walk = list()
             for j in range(4):
                 diff_feature_random_walk.append(tf.matmul(tf.nn.l2_normalize(left_all[i]), tf.nn.l2_normalize(right_all[j]), transpose_a=False, transpose_b=True))
+
             if not i:
                 feature_out = tf.reduce_max(diff_feature_random_walk, axis=0)
             else:
-                feature_out = tf.concat([feature_out, tf.reduce_max(diff_feature_random_walk, axis=0)], axis=0)
+                feature_out = tf.concat([feature_out, tf.reduce_max(diff_feature_random_walk, axis=0)], axis=1)
+        del left_all, right_all
+        del diff_feature_random_walk
         fc_out = slim.fully_connected(slim.flatten(feature_out), 2, activation_fn=None)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
 
@@ -46,7 +49,7 @@ def contrastive_loss(_left, _right, _label_input):
 
     with tf.name_scope('loss'):
         _loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=_label_input, logits=_inner_product)
-        __loss_out = tf.reduce_sum(_loss)
+        __loss_out = tf.reduce_mean(_loss)
     return __loss_out, _loss, _inner_product
 
 
@@ -69,7 +72,7 @@ if __name__ == '__main__':
         # shape is (batch, x, x, 2048)
 
     with tf.Session() as sess:
-        lr = 1e-3
+        lr = 1e-2
         # restore the graph, so we should not define any other graph before that.
         sess.run(tf.global_variables_initializer())
         restore = tf.train.Saver()
@@ -102,13 +105,15 @@ if __name__ == '__main__':
                 saver.save(sess, './model/only_visual_result/model_random_walk_1_3_%d.ckpt' % i)
                 # if config.LEARNING_RATE >= 1e-4:
                 # lr /= 10
-                if i > 120 and lr > 1e-4:
+                if i > 220 and lr > 1e-4:
                     lr /= 2
                 elif i > 3000 and lr > 1e-5:
                     lr /= 2
-            print(i, __, sum_loss)
+            print(i, sum_loss)
 
             # print(_left_out.shape)
             # print(_right_out.shape)
             # problem like Attempting to use uninitialized value fully_connected/biases
             # solved: the position initializer should place after the graph.
+
+nets.vgg.vgg_16()
