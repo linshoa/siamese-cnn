@@ -27,7 +27,7 @@ def contrastive_loss(_left, _right, _label_input, _info_left_location, _info_rig
         _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
         _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
         diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
-        fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.7)
+        fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.5)
         # fc_out = slim.fully_connected(slim.flatten(diff_feature), 16)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 16])
 
@@ -107,7 +107,7 @@ if __name__ == '__main__':
                 # lr /= 10
                 if i > 220 and lr > 1e-5:
                     lr /= 2
-                elif i > 3000 and lr > 1e-6:
+                elif i > 2000 and lr > 1e-6:
                     lr /= 2
             print(i, sum_loss)
             # print(_left_out.shape)
