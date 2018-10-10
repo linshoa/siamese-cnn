@@ -115,5 +115,3 @@ if __name__ == '__main__':
             # print(_right_out.shape)
             # problem like Attempting to use uninitialized value fully_connected/biases
             # solved: the position initializer should place after the graph.
-
-nets.vgg.vgg_16()

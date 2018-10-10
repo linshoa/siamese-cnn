@@ -23,11 +23,10 @@ def contrastive_loss(_left, _right, _label_input, _info_left_location, _info_rig
     with tf.name_scope('output'):
         # the transpose here really memory consume!!!
         # inner_product = tf.matmul(_left, tf.matrix_transpose(_right))
-        # todo drpout
         _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
         _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
         diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
-        fc_out = slim.dropout(slim.fully_connected(slim.flatten(diff_feature), 16), keep_prob=0.5)
+        fc_out = slim.fully_connected(slim.flatten(diff_feature), 16)
         # fc_out = slim.fully_connected(slim.flatten(diff_feature), 16)
         _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 16])
 
@@ -68,7 +67,7 @@ if __name__ == '__main__':
         # shape is (batch, x, x, 2048)
 
     with tf.Session(config=cuda.config) as sess:
-        lr = 1e-4
+        lr = 1e-2
         # restore the graph, so we should not define any other graph before that.
         sess.run(tf.global_variables_initializer())
         restore = tf.train.Saver()
@@ -76,7 +75,7 @@ if __name__ == '__main__':
         # after that, can be other networks
         global_step = tf.Variable(0, trainable=False)
         loss, intermediate_loss, _all = contrastive_loss(left_feature, right_feature, label_input, left_location, right_location, left_time, right_time)
-        train_step = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
+        train_step = tf.train.GradientDescentOptimizer(lr).minimize(loss, global_step=global_step)
         sess.run(tf.global_variables_initializer())
 
         # define something to save

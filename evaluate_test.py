@@ -5,7 +5,7 @@ import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as nets
 from utils.image_precess import *
 import numpy as np
-import time
+
 
 model_siamese_cnn = './model/only_visual_result/model_random_walk_1_3_9900.ckpt'
 query_img_dir = config.DukeMTMC_img_dir+'query/'
