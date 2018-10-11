@@ -68,6 +68,7 @@ if __name__ == '__main__':
 
     with tf.Session(config=cuda.config) as sess:
         lr = 1e-2
+        last_loss = 0
         # restore the graph, so we should not define any other graph before that.
         sess.run(tf.global_variables_initializer())
         restore = tf.train.Saver()
@@ -102,14 +103,14 @@ if __name__ == '__main__':
             writer.add_summary(summary_str, i)
             if i % config.SAVE_ITER == 0 and i != 0:
                 saver.save(sess, './model/spatio_temparal_visual_result/model_p_n_1_3_%d.ckpt' % i)
-                # if config.LEARNING_RATE >= 1e-4:
+                if abs(sum_loss - last_loss) < 0.0001:
+                    lr /= 2
                 # lr /= 10
-                if i > 220 and lr > 1e-5:
-                    lr /= 2
-                elif i > 2000 and lr > 1e-6:
-                    lr /= 2
+                # if i > 220 and lr > 1e-5:
+                #     lr /= 2
+                # elif i > 2000 and lr > 1e-6:
+                #     lr /= 2
             print(i, sum_loss)
+            last_loss = sum_loss
             # print(_left_out.shape)
             # print(_right_out.shape)
-            # problem like Attempting to use uninitialized value fully_connected/biases
-            # solved: the position initializer should place after the graph.
