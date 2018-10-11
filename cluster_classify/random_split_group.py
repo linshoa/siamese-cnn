@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def split_id(line_in):
@@ -11,25 +12,26 @@ def random_select(_all_dict):
     for _id in _all_dict:
         exact_id = _all_dict[_id]
         number = len(exact_id)
-        random_group_number = np.random.randint(1, number)
-        for group in range(random_group_number):
+        random_group_number = np.random.randint(2, number)
+        for group_index in range(random_group_number):
             # number need to update
             # exact_id need to update
-            # todo 1
-            if number-random_group_number-group-1 <= 1:
-                random_want_select = 1
+
+            # the group left need at least one imgs. so number-random_group_number+group_index+1 is the upper bound.
+            # print(number-random_group_number+group_index+1)
+            if number-random_group_number+group_index+1 > 2:
+                random_want_select = np.random.randint(2, number-random_group_number+group_index+1)
             else:
-                random_want_select = np.random.randint(1, number-random_group_number-group-1)
-            print(random_want_select)
+                random_want_select = np.random.randint(1, 2)
+            # print(random_want_select)
             one_group = list(np.random.choice(exact_id, random_want_select, replace=False))
             all_group.append(one_group)
             for i in one_group:
-                print(i)
-                # try:
+                # print(i)
                 exact_id.remove(i)
-                # except Exception:
-                #     print(i+'ssssssssss')
             number = len(exact_id)
+            all_group.append(one_group)
+    return all_group
 
 
 if __name__ == '__main__':
@@ -44,4 +46,18 @@ if __name__ == '__main__':
             else:
                 _all_id[line_id].append(line[:-1])
 
-    random_select(_all_id)
+    first_group = random_select(_all_id)
+    _dict_all = {}
+    _dict_all['index'] = list()
+    _dict_all['group_img'] = list()
+    for index, one_group in enumerate(first_group):
+        _dict_all['index'].append(index)
+        _dict_all['group_img'].append(one_group)
+    df = pd.DataFrame(_dict_all)
+
+    df.to_json('./random_group.json')
+
+    df = pd.read_json('./random_group.json')
+    df.sort_values(by='index')
+    for index, one_group in df.values:
+        print(index, one_group)
