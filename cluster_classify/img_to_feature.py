@@ -24,10 +24,9 @@ if __name__ == '__main__':
     with tf.Session() as sess:
         saver = tf.train.Saver()
         saver.restore(sess, './model_p_n_1_3_49950.ckpt')
-
+        _feature_dict = {}
         with open(file_dir, 'r') as f:
             for i, line in enumerate(f):
-                _feature_dict = {}
                 if i > 5:
                     break
                 img_name = line[:-1]
@@ -37,8 +36,8 @@ if __name__ == '__main__':
                 _feature_dict[img_name] = _feature.tolist()
                 # (1, 8, 3, 2048)
                 # print([_feature])
-                with open('./img_feature.json', 'a') as w:
-                    json.dump(img_name, w)
+        with open('./img_feature.json', 'w') as w:
+            json.dump(_feature_dict, w)
 
     # 0001
     # _c2_f0046182.jpg
@@ -55,7 +54,7 @@ if __name__ == '__main__':
 
     with open('./img_feature.json', 'r') as f:
         for i, ii in enumerate(f):
-            print(i, ii)
+            print(i)
         # a = json.load(f)
         # for i in a:
         #     print(i)
