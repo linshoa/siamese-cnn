@@ -9,47 +9,49 @@ from utils.extract_batch import next_batch
 resnet_v1_50_model = './model/resnet_v1_50.ckpt'
 
 
-def contrastive_loss(_left, _right, _label_input):
+def contrastive_loss(_left, _right, _label_input, _left_label, _right_label):
     with tf.name_scope('output'):
-        # the transpose here really memory consume!!!
-        # inner_product = tf.matmul(_left, tf.matrix_transpose(_right))
-
+        """RANDOM"""
         # here is for random cos
         # first divide the feature into 3 group
         # them random walk, and accept the max feature.
-        left_all = []
-        right_all = []
-        for i in range(4):
-            left_all.append(_left[:, _left.shape[1]//4*i:_left.shape[1]//4*(i+1), :, :])
-            right_all.append(_right[:, _right.shape[1]//4*i:_right.shape[1]//4*(i+1), :, :])
-
-        for i in range(4):
-            diff_feature_random_walk = list()
-            for j in range(4):
-                diff_feature_random_walk.append(tf.matmul(tf.nn.l2_normalize(left_all[i]), tf.nn.l2_normalize(right_all[j]), transpose_a=False, transpose_b=True))
-
-            if not i:
-                feature_out = tf.reduce_max(diff_feature_random_walk, axis=0)
-            else:
-                feature_out = tf.concat([feature_out, tf.reduce_max(diff_feature_random_walk, axis=0)], axis=1)
-        del left_all, right_all
-        del diff_feature_random_walk
-        fc_out = slim.fully_connected(slim.flatten(feature_out), 2, activation_fn=None)
-        _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
-
-
-
-        #todo drpout
-        # _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
-        # _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
-        # diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
-        # fc_out = slim.fully_connected(slim.flatten(diff_feature), 2, activation_fn=None)
+        # left_all = []
+        # right_all = []
+        # for i in range(4):
+        #     left_all.append(_left[:, _left.shape[1]//4*i:_left.shape[1]//4*(i+1), :, :])
+        #     right_all.append(_right[:, _right.shape[1]//4*i:_right.shape[1]//4*(i+1), :, :])
+        #
+        # for i in range(4):
+        #     diff_feature_random_walk = list()
+        #     for j in range(4):
+        #         diff_feature_random_walk.append(tf.matmul(tf.nn.l2_normalize(left_all[i]), tf.nn.l2_normalize(right_all[j]), transpose_a=False, transpose_b=True))
+        #
+        #     if not i:
+        #         feature_out = tf.reduce_max(diff_feature_random_walk, axis=0)
+        #     else:
+        #         feature_out = tf.concat([feature_out, tf.reduce_max(diff_feature_random_walk, axis=0)], axis=1)
+        # del left_all, right_all
+        # del diff_feature_random_walk
+        # fc_out = slim.fully_connected(slim.flatten(feature_out), 2, activation_fn=None)
         # _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
+
+        fc_left = slim.fully_connected(slim.flatten(_left), 7140, activation_fn=None)
+        fc_right = slim.fully_connected(slim.flatten(_right), 7140, activation_fn=None)
+
+
+        """cos"""
+        _left_l2 = tf.nn.l2_normalize(_left, name='left_l2_norm')
+        _right_l2 = tf.nn.l2_normalize(_right, name='right_l2_norm')
+        diff_feature = tf.matmul(_left_l2, _right_l2, transpose_a=False, transpose_b=True)
+        fc_out = slim.fully_connected(slim.flatten(diff_feature), 2, activation_fn=None)
+        _inner_product = tf.reshape(fc_out, [config.BATCH_SIZE, 1, 2])
         # 输出 [1,0] or [0, 1]
 
     with tf.name_scope('loss'):
+        _left_id_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=_left_label, logits=fc_left)
+        _right_id_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=_right_label, logits=fc_right)
         _loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=_label_input, logits=_inner_product)
-        __loss_out = tf.reduce_mean(_loss)
+        __loss_out = tf.reduce_mean(_loss) + tf.reduce_mean(_left_id_loss) + tf.reduce_mean(_right_id_loss)
     return __loss_out, _loss, _inner_product
 
 
@@ -60,6 +62,8 @@ if __name__ == '__main__':
 
     with tf.name_scope('label'):
         label_input = tf.placeholder(tf.float32, [None, 1, 2], name='label')
+        identity_left_label = tf.placeholder(tf.float32, [None, 7140], name='identity_left_label')
+        identity_right_label = tf.placeholder(tf.float32, [None, 7140], name='identity_right_label')
 
     with slim.arg_scope(nets.resnet_v1.resnet_arg_scope()):
         # todo is_training True
@@ -79,8 +83,8 @@ if __name__ == '__main__':
         restore.restore(sess, resnet_v1_50_model)
         # after that, can be other networks
         global_step = tf.Variable(0, trainable=False)
-        loss, intermediate_loss, _inner_product = contrastive_loss(left_feature, right_feature, label_input)
-        train_step = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
+        loss, intermediate_loss, _inner_product = contrastive_loss(left_feature, right_feature, label_input, identity_left_label, identity_right_label)
+        train_step = tf.train.GradientDescentOptimizer(lr).minimize(loss, global_step=global_step)
         sess.run(tf.global_variables_initializer())
 
         # define something to save
@@ -98,7 +102,14 @@ if __name__ == '__main__':
         next_start = 0
         for i in range(config.EPOCH):
             left_array, right_array, label_float32, _info_left, _info_right, next_start = next_batch(config.BATCH_SIZE, [240, 80], True, next_start)
-            __, _, sum_loss, not_sum_loss, summary_str = sess.run([_inner_product, train_step, loss,  intermediate_loss, merged], feed_dict={left: left_array, right: right_array, label_input: label_float32})
+            # print(np.array(_info_left).transpose())
+            # print(np.array(_info_left).transpose()[0])
+            _id_left_label = np.array(list(np.array(_info_left).transpose()[0]))
+            print(_id_left_label.shape)
+            print(_id_left_label)
+            _id_right_label = np.array(list(np.array(_info_right).transpose()[0]))
+
+            __, _, sum_loss, not_sum_loss, summary_str = sess.run([_inner_product, train_step, loss,  intermediate_loss, merged], feed_dict={left: left_array, right: right_array, identity_left_label: _id_left_label, identity_right_label: _id_right_label, label_input: label_float32})
 
             writer.add_summary(summary_str, i)
             if i % config.SAVE_ITER == 0 and i != 0:

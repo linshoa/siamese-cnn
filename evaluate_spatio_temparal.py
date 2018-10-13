@@ -8,11 +8,14 @@ import numpy as np
 from utils.extract_batch import *
 import cv2
 
-model_siamese_cnn = './model/spatio_temparal_visual_result/model_p_n_1_3_9950.ckpt'
+# model_siamese_cnn = './model/spatio_temparal_visual_result/model_p_n_1_3_49900.ckpt'
+model_siamese_cnn = './cluster_classify/model_p_n_1_3_49950.ckpt'
 query_img_dir = config.DukeMTMC_img_dir+'query/'
 test_img_dir = config.DukeMTMC_img_dir+'bounding_box_test/'
 query_name_dir = config.DukeMTMC_name_dir+'query.txt'
 test_name_dir = config.DukeMTMC_name_dir+'bounding_box_test.txt'
+
+config.BATCH_SIZE = 1
 
 
 def spatio_temporal(location_left, location_right, time_left, time_right):
@@ -95,6 +98,6 @@ with tf.Session(config=cuda.config) as sess:
                     _test_array = preprocess_input(img_2_array(load_img(test_img_dir+test_line[:-1], target_size=[240, 80])))
 
                     _final_score, _left_feature, _right_feature = sess.run([final_out, left_feature, right_feature], feed_dict={left: [_query_array], right: [_test_array], left_location: [[query_location]], right_location: [[test_location]], left_time: [_query_time], right_time: [_test_time]})
-                    print(_final_score)
+                    print(test_id, _final_score)
                     if np.argmax(_final_score[0]) == 0:
                         print(test_id)

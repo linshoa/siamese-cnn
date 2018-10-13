@@ -67,7 +67,7 @@ if __name__ == '__main__':
         # shape is (batch, x, x, 2048)
 
     with tf.Session(config=cuda.config) as sess:
-        lr = 1e-2
+        lr = 1e-3
         last_loss = 0
         # restore the graph, so we should not define any other graph before that.
         sess.run(tf.global_variables_initializer())
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         # after that, can be other networks
         global_step = tf.Variable(0, trainable=False)
         loss, intermediate_loss, _all = contrastive_loss(left_feature, right_feature, label_input, left_location, right_location, left_time, right_time)
-        train_step = tf.train.GradientDescentOptimizer(lr).minimize(loss, global_step=global_step)
+        train_step = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
         sess.run(tf.global_variables_initializer())
 
         # define something to save
@@ -94,6 +94,7 @@ if __name__ == '__main__':
         next_start = 0
         for i in range(config.EPOCH):
             left_array, right_array, label_float32, _info_left, _info_right, next_start = next_batch(config.BATCH_SIZE, [240, 80], True, next_start)
+            # todo reshape here has problem!!!
             _info_left_location = np.reshape(np.array(_info_left).transpose()[1], [config.BATCH_SIZE, 1])
             _info_left_time = np.reshape(np.array(_info_left).transpose()[2], [config.BATCH_SIZE, 1])
             _info_right_location = np.reshape(np.array(_info_right).transpose()[1], [config.BATCH_SIZE, 1])
@@ -106,10 +107,10 @@ if __name__ == '__main__':
                 if abs(sum_loss - last_loss) < 0.0001:
                     lr /= 2
                 # lr /= 10
-                # if i > 220 and lr > 1e-5:
-                #     lr /= 2
-                # elif i > 2000 and lr > 1e-6:
-                #     lr /= 2
+                if lr > 1e-5:
+                    lr /= 2
+                elif i > 2000 and lr > 1e-6:
+                    lr /= 2
             print(i, sum_loss)
             last_loss = sum_loss
             # print(_left_out.shape)

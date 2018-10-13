@@ -1,5 +1,6 @@
-import json
+import pandas as pd
 import numpy as np
+from cluster_classify.img_to_feature import get_feature
 
 
 def get_distance(vector_a, vector_b):
@@ -15,18 +16,17 @@ def get_distance(vector_a, vector_b):
 
 def get_centers(batch_data):
     """
-    :param batch_data: [B, H, W, C]
-    :return: [H, W, C]
+    :param batch_data: [B, H, W, C] (n,8,3,2048)
+    :return: [H, W, C] --> (8, 3, 2018)
     """
-    h_mean = np.mean(batch_data, 1)
-    w_mean = np.mean(batch_data, 2)
-    c_mean = np.mean(batch_data, 3)
+    h_mean = np.mean(batch_data[:, 8, :, :], 0)
+    w_mean = np.mean(batch_data[:, :, 3, :], 0)
+    c_mean = np.mean(batch_data[:, :, :, 2018], 0)
     return np.array([h_mean, w_mean, c_mean])
 
 
-def k_means(feature_data, group_label):
+def k_means(group_label):
     """
-    :param feature_data: dict {'img_name': feature}
     :param group_label: big list [[group1], [group2]]
     :return: group_label
     """
@@ -37,10 +37,10 @@ def k_means(feature_data, group_label):
         old_distance = new_distance
         centers = []
         center_to_center_distance = []
-        for group_number in group_label:
+        for group_number, _ in enumerate(group_label):
             batch_data = []
             for img_name in group_label[group_number]:
-                batch_data.append(feature_data[img_name])
+                batch_data.append(get_feature(img_name))
             batch_center = get_centers(batch_data)
             batch_distance = 0
             for i in batch_data:
@@ -70,19 +70,14 @@ def k_means(feature_data, group_label):
 
 def load_group_data():
     file_dir = './random_group.json'
-    with open(file_dir, 'r') as f:
-        random_group = json.load(f)
-    # transfer into big list !!!
+    df = pd.read_json(file_dir)
     big_list_group = []
-    for i in random_group:
-        big_list_group.append(random_group[i])
+    for group_img, index in df.values:
+        # transfer into big list !!!
+        big_list_group.append(group_img)
     return big_list_group
-
-
-def load_feature_data():
-    file_dir = './img_feature.json'
-    with open(file_dir, 'r') as f:
 
 
 if __name__ == '__main__':
     group_label = load_group_data()
+    k_means(group_label)

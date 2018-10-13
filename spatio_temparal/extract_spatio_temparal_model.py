@@ -57,7 +57,7 @@ def plot():
         camera_duration = json.load(w)
     data_sort = np.array(sorted(camera_duration.items(), key=lambda a: int(a[0])), int)
     plt.xlim(-2000, 2000)
-    plt.ylim(0, 4000)
+    plt.ylim(0, 1000)
     plt.plot(data_sort[:, 0][::], data_sort[:, 1][::], '-', lw=1)
 
     plt.show()
