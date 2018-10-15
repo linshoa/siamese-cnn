@@ -19,6 +19,7 @@ def get_id(name_select):
     :param name_select: whether select train, test or query
     :return: return the no-repeat person id
     """
+    """save as the json."""
     person_set_id = []
     name_select = diff_set[name_select]
     with open(name_dir + name_select, 'r') as f:
@@ -26,11 +27,20 @@ def get_id(name_select):
             person_set_id.append(line.split('_')[0])
         # set 无序不重复集
         person_set_id = list(set(person_set_id))
+    with open('./person_set_id.json', 'w') as w:
+        json.dump(person_set_id, w)
+    # with open('./utils/person_set_id.json', 'r') as r:
+    #     person_set_id = json.load(r)
     return person_set_id
 
 
-# load just once!!!
-set_id = get_id('train')
+def get_identity(_person_id):
+    """will change every time"""
+    # identity = [0. for i in range(7140)]
+    identity = np.zeros([702])
+    index = set_id.index(_person_id)
+    identity[int(index)-1] = float(1)
+    return identity
 
 
 def get_id_corresponding_name():
@@ -46,10 +56,6 @@ def get_id_corresponding_name():
     return id_person
 
 
-# just load once !!
-id_dict = get_id_corresponding_name()
-
-
 def get_id_spatio_temporal(line):
     """
     get the id location time of the img_name
@@ -58,6 +64,7 @@ def get_id_spatio_temporal(line):
     """
     data = line[:-4].split('_')
     person_id, location, _time = data[0], data[1][1: ], data[2][1:]
+    person_id = get_identity(person_id)
     return [person_id, location, _time]
 
 
@@ -115,6 +122,8 @@ def get_pair(_ids, start, end):
     shuffle_labels = []
     left_info = []
     right_info = []
+    left_id = []
+    right_id = []
     
     for index in shuffle_index:
         shuffle_left_imgs.append(left_imgs[index])
@@ -162,11 +171,15 @@ def next_batch(batch_size, target_size, is_train, start):
         # take care start > end !!!
         # todo the format of imgs_array is wrong ! while labels not sure!!
         left_imgs_name, right_imgs_name, labels, info_left, info_right = get_pair(_ids, start, end)
-        info_left_location = info_left[:][1]
-        info_left_time = info_left[:][2]
         left_imgs_array, right_imgs_array = precess_to_array(left_imgs_name, right_imgs_name, target_size, name_select)
         return left_imgs_array, right_imgs_array, labels, info_left, info_right, end
 
 
-# if __name__ == '__main__':
-#     next_batch(2, [224, 224], True, 702)
+# load just once!!!
+set_id = get_id('train')
+
+# just load once !!
+id_dict = get_id_corresponding_name()
+
+if __name__ == '__main__':
+    print(get_identity('0001'))
