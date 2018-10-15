@@ -1,8 +1,10 @@
+import sys
 import json
 from random import shuffle
 from utils.image_precess import *
 from utils import config
 
+sys.path.append('.')
 """
 for DukeMTMC example：
 0001_c2_f0046302.jpg--> {{'id':0001},{location:c2},{time:0046302},}
