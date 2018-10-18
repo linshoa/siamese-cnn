@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as nets
@@ -23,7 +27,7 @@ def get_feature(img_name):
 
     sess = tf.Session()
     saver = tf.train.Saver()
-    saver.restore(sess, './model_p_n_1_3_49950.ckpt')
+    saver.restore(sess, './model_1_3_49950.ckpt')
     img_array = get_image(img_dir, img_name)
     print(img_name)
     _feature = sess.run(feature, feed_dict={image_input: np.reshape(img_array, [1, 240, 80, 3])})

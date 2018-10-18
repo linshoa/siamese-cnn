@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import pandas as pd
 import numpy as np
 from cluster_classify.img_to_feature import get_feature
@@ -11,7 +15,7 @@ def get_distance(vector_a, vector_b):
     """
     a = np.square(pow(vector_a, 2))
     b = np.square(pow(vector_b, 2))
-    return sum(np.matmul(np.transpose(a), b))
+    return sum(np.multiply(np.reshape(3*8, 2048), np.reshape(3*8, 2048)))
 
 
 def get_centers(batch_data):
@@ -19,10 +23,7 @@ def get_centers(batch_data):
     :param batch_data: [B, H, W, C] (n,8,3,2048)
     :return: [H, W, C] --> (8, 3, 2018)
     """
-    h_mean = np.mean(batch_data[:, 8, :, :], 0)
-    w_mean = np.mean(batch_data[:, :, 3, :], 0)
-    c_mean = np.mean(batch_data[:, :, :, 2018], 0)
-    return np.array([h_mean, w_mean, c_mean])
+    return np.mean(batch_data, 0)
 
 
 def k_means(group_label):
@@ -44,6 +45,8 @@ def k_means(group_label):
             batch_center = get_centers(batch_data)
             batch_distance = 0
             for i in batch_data:
+                #     return sum(np.matmul(np.transpose(a), b))
+                # ValueError: shapes (2048,3,8,1) and (1,8,3,2048) not aligned: 1 (dim 3) != 3 (dim 2)
                 batch_distance += get_distance(i, batch_center)
             new_distance += batch_distance / len(batch_data)
             centers.append(get_centers(batch_data))

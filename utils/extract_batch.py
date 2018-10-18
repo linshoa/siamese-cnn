@@ -1,6 +1,6 @@
-import sys
-sys.path.append('./')
-sys.path.append('../')
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import json
 from random import shuffle
@@ -25,17 +25,17 @@ def get_id(name_select):
     :return: return the no-repeat person id
     """
     """save as the json."""
-    person_set_id = []
-    name_select = diff_set[name_select]
-    with open(name_dir + name_select, 'r') as f:
-        for line in f:
-            person_set_id.append(line.split('_')[0])
-        # set 无序不重复集
-        person_set_id = list(set(person_set_id))
-    with open('./person_set_id.json', 'w') as w:
-        json.dump(person_set_id, w)
-    # with open('./utils/person_set_id.json', 'r') as r:
-    #     person_set_id = json.load(r)
+    # person_set_id = []
+    # name_select = diff_set[name_select]
+    # with open(name_dir + name_select, 'r') as f:
+    #     for line in f:
+    #         person_set_id.append(line.split('_')[0])
+    #     # set 无序不重复集
+    #     person_set_id = list(set(person_set_id))
+    # with open('./person_set_id.json', 'w') as w:
+    #     json.dump(person_set_id, w)
+    with open('person_set_id.json', 'r') as r:
+        person_set_id = json.load(r)
     return person_set_id
 
 
@@ -44,6 +44,7 @@ def get_identity(_person_id):
     # identity = [0. for i in range(7140)]
     identity = np.zeros([702])
     index = set_id.index(_person_id)
+    print(index)
     identity[int(index)-1] = float(1)
     return identity
 
@@ -109,7 +110,7 @@ def get_pair(_ids, start, end):
 
     # split into positive and negative
     for i in person_id:
-        if person_id.index(i) < len(person_id)//4:
+        if person_id.index(i) < len(person_id) // 2:
             # positive
             left, right, label = get_exact_id_pair(i, positive=True)
         else:
@@ -127,8 +128,6 @@ def get_pair(_ids, start, end):
     shuffle_labels = []
     left_info = []
     right_info = []
-    left_id = []
-    right_id = []
     
     for index in shuffle_index:
         shuffle_left_imgs.append(left_imgs[index])
@@ -187,4 +186,5 @@ set_id = get_id('train')
 id_dict = get_id_corresponding_name()
 
 if __name__ == '__main__':
+    # 475
     print(get_identity('0001'))
